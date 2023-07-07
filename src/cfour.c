@@ -12,32 +12,43 @@
 
 /* 6 rows of bytes
  * last bit unused
- * [0, 1, 2, 3, 4, 5, 6, 7
+ * [0, 1, 2, 3, 4, 5, 6, -
  * ...
- * 40, 41, 42, 43, 44, 45, 46, 47]
+ * 40, 41, 42, 43, 44, 45, 46, -]
 */
 
 int makemove(long * playermask, long fullmask, int col);
 int checkdir(long playermask, long move, int xshift, int yshift);
+long inputfailed(long * playermaskp, long fullmask);
 
 /* takeinput: takes user input and executes move; returns move */
 int takeinput(long * playermaskp, long fullmask) {
     printf("Enter the column of your move: ");
-    int col;
-    scanf("%d", &col);
-    col--;
-    if (col >= NUM_COL) {
-        goto failed;
-    }
 
+    int col;
     long move;
+
+    scanf("%d", &col);
+    while (getchar() != '\n');
+
+    if (col == -1)
+        exit(0);
+    else if (col >= 0 && col < NUM_COL)
+        col--;
+    else
+        return inputfailed(playermaskp, fullmask);
+
     move = makemove(playermaskp, fullmask, col);
     if (move == -1) {
-        failed:
-            printf("Try again\n");
-            move = takeinput(playermaskp, fullmask);
+        return inputfailed(playermaskp, fullmask);
     }
     return move;
+}
+
+/* inputfailed: called when input fails; asks to try again and returns first input */
+long inputfailed(long * playermaskp, long fullmask) {
+    printf("Input failed. Try again\n");
+    return takeinput(playermaskp, fullmask);
 }
 
 /* makemove: makes move on playermask if possible; reutrns move if successful -1 if not */

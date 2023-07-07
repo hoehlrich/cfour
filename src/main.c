@@ -3,6 +3,7 @@
 #include "cfour.h"
 
 int main() {
+    init();
     long bluemask, redmask;
     bluemask = redmask = 0;
 
@@ -18,7 +19,7 @@ int main() {
             winner = i % 2 ? 'X' : 'O';
             printboard(bluemask, redmask);
             printf("%c won!\n", winner);
-            exit(1);
+            exit(0);
         }
     }
 }
