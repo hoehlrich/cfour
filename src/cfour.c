@@ -32,8 +32,8 @@ int takeinput(long * playermaskp, long fullmask) {
     while (getchar() != '\n');
 
     if (col == -1)
-        exit(0);
-    else if (col >= 0 && col < NUM_COL)
+        quit();
+    else if (col >= 0 && col <= NUM_COL)
         col--;
     else
         return inputfailed(playermaskp, fullmask);
