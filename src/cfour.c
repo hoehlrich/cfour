@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include "cfour.h"
 
-#define NUM_ROW     6
-#define NUM_COL     7
-#define BYTE        8
 #define FOOTER      "1 2 3 4 5 6 7" 
 #define CONNECT_FOUR    4
 
@@ -33,7 +30,7 @@ int takeinput(long * playermaskp, long fullmask) {
 
     if (col == -1)
         quit();
-    else if (col >= 0 && col <= NUM_COL)
+    else if (col >= 0 && col <= NUMCOL)
         col--;
     else
         return inputfailed(playermaskp, fullmask);
@@ -56,7 +53,7 @@ int makemove(long * playermaskp, long fullmask, int col) {
     int i, n;
     long move;
 
-    for (i = 0; i < NUM_ROW; i++) {
+    for (i = 0; i < NUMROW; i++) {
         n = (BYTE * i) + col;
         move = pow(2, n);
         if ((fullmask & move) == 0) {
@@ -70,8 +67,8 @@ int makemove(long * playermaskp, long fullmask, int col) {
 void printboard(long bluemask, long redmask) {
     int i, j;
     long space;
-    for (i = NUM_ROW - 1; i >= 0; i--) {
-        for (j = 0; j < NUM_COL; j++) {
+    for (i = NUMROW - 1; i >= 0; i--) {
+        for (j = 0; j < NUMCOL; j++) {
             space = pow(2, (BYTE*i) + j);
             if ((bluemask & space) != 0) {
                 printf("X ");

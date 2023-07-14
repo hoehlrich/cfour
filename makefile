@@ -13,5 +13,8 @@ target/cfour.o : src/cfour.c src/cfour.h
 target/gui.o : src/gui.c src/cfour.h
 	gcc -c src/gui.c $$(sdl2-config --cflags) -o target/gui.o
 
+target/event.o : src/event.c src/cfour.h
+	gcc -c src/event.c $$(sdl2-config --cflags) -o target/event.o
+
 clean :
 	rm target/*.o
