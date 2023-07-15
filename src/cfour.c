@@ -14,7 +14,6 @@
  * 40, 41, 42, 43, 44, 45, 46, -]
 */
 
-int makemove(long * playermask, long fullmask, int col);
 int checkdir(long playermask, long move, int xshift, int yshift);
 long inputfailed(long * playermaskp, long fullmask);
 
@@ -49,7 +48,7 @@ long inputfailed(long * playermaskp, long fullmask) {
 }
 
 /* makemove: makes move on playermask if possible; reutrns move if successful -1 if not */
-int makemove(long * playermaskp, long fullmask, int col) {
+long makemove(long * playermaskp, long fullmask, int col) {
     int i, n;
     long move;
 

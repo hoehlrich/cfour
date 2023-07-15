@@ -1,6 +1,4 @@
 #include "cfour.h"
-#include <SDL2/SDL_error.h>
-#include <SDL2/SDL_render.h>
 
 #define FPS 30
 #define ASP_WIDTH   7
@@ -16,12 +14,18 @@ void drawcircle(SDL_Renderer *renderer, int x0, int y0, int radius);
 void drawbar(SDL_Renderer *renderer, int n);
 void drawbars(SDL_Renderer *renderer);
 void drawpieces(SDL_Renderer *renderer, long bluemask, long redmask);
+struct Coord idxtocoord(int xi, int yi);
 
 SDL_Window *window;
 SDL_Renderer *renderer;
 SDL_Surface *screensurface;
 int activesection;
 int lastupdate;
+
+struct Coord {
+    int x;
+    int y;
+};
 
 int init() {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -51,10 +55,10 @@ void quit() {
     exit(0);
 }
 
-void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, SDL_Texture *texture, long bluemask, long redmask) {
+void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, long bluemask, long redmask) {
     lastupdate = SDL_GetTicks();
     SDL_RenderClear(renderer);
-    texture = SDL_CreateTextureFromSurface(renderer, screensurface);
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, screensurface);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
 
     drawbars(renderer);
@@ -63,10 +67,10 @@ void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, SDL_Texture
     SDL_RenderPresent(renderer);
 }
 
-void update(SDL_Renderer *renderer, SDL_Surface *screensurface, SDL_Texture *texture, long bluemask, long redmask) {
+void update(SDL_Renderer *renderer, SDL_Surface *screensurface, long bluemask, long redmask) {
     int ticks = SDL_GetTicks();
     if (ticks - lastupdate >= 1000 / FPS) {
-        renderboard(renderer, screensurface, texture, bluemask, redmask);
+        renderboard(renderer, screensurface, bluemask, redmask);
     }
 }
 
@@ -117,7 +121,7 @@ void drawbar(SDL_Renderer *renderer, int n) {
     x = (SECTIONWIDTH / 2) + (SECTIONWIDTH * n);
     y0 = radius;
     y1 = SECTIONHEIGHT - radius;
-    offset = SECTIONWIDTH * 0.05;
+    offset = SECTIONWIDTH / 20;
 
     drawcircle(renderer, x, y0, radius - offset);
     drawcircle(renderer, x, y1, radius - offset);
@@ -143,26 +147,29 @@ int insidesection(SDL_Event event) {
 }
 
 void drawpieces(SDL_Renderer *renderer, long bluemask, long redmask) {
-    int i, j, x, y;
+    int i, j;
     long space;
+    struct Coord coord;
     int radius = (SECTIONWIDTH / 2) * 0.8;
-
-    x = SECTIONWIDTH / 2;
-    y = SECTIONHEIGHT - (SECTIONWIDTH / 2);
 
     for (i = 0; i < NUMROW; i++) {
         for (j = 0; j < NUMCOL; j++) {
             space = pow(2, (BYTE*i) + j);
+            coord = idxtocoord(j, i);
             if (bluemask & space) {
                 SDL_SetRenderDrawColor(renderer, 32, 62, 160, SDL_ALPHA_OPAQUE);
-                drawcircle(renderer, x, y, radius);
+                drawcircle(renderer, coord.x, coord.y, radius);
             } else if (redmask & space) {
                 SDL_SetRenderDrawColor(renderer, 170, 20, 20, SDL_ALPHA_OPAQUE);
-                drawcircle(renderer, x, y, radius);
+                drawcircle(renderer, coord.x, coord.y, radius);
             }
-            x += SECTIONWIDTH;
         }
-        y -= SECTIONWIDTH;
-        x = SECTIONWIDTH / 2;
     }
+}
+
+struct Coord idxtocoord(int xi, int yi) {
+    struct Coord coord;
+    coord.x = (SECTIONWIDTH / 2) + (xi * SECTIONWIDTH);
+    coord.y = SECTIONHEIGHT - (SECTIONWIDTH / 2) - (yi * SECTIONWIDTH);
+    return coord;
 }
