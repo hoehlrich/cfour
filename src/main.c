@@ -35,6 +35,8 @@ int main() {
             case SDL_MOUSEBUTTONDOWN:
                 playermaskp = i % 2 ? &bluemask : &redmask;
                 move = makemove(playermaskp, bluemask | redmask, activesection);
+                if (move == -1)
+                    break;
                 if (checkwin(*playermaskp, move)) {
                     char winner;
                     winner = i % 2 ? 'O' : 'X';

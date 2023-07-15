@@ -84,7 +84,7 @@ void printboard(long bluemask, long redmask) {
 }
 
 int checkwin(long playermask, long move) {
-    if (checkdir(playermask, move, -1, 0)) 
+    if (checkdir(playermask, move, -1, 0))
         return 1;
     else if (checkdir(playermask, move, -1, 1))
         return 1;
@@ -98,7 +98,8 @@ int checkwin(long playermask, long move) {
 }
 
 int checkdir(long playermask, long move, int xshift, int yshift) {
-    int shift, connected, omove;
+    int shift, connected;
+    long omove;
     connected = 1;
     omove = move;
     while (1) {
@@ -113,6 +114,7 @@ int checkdir(long playermask, long move, int xshift, int yshift) {
         else
             break;
     }
+
     while (1) {
         shift = -xshift + (BYTE * -yshift);
         if (shift > 0) {
