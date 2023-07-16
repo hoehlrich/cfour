@@ -12,16 +12,23 @@
 #define NUMROW  6
 #define BYTE    8
 
+struct Board {
+    long playermask;
+    long aimask;
+};
+
 int init();
 void quit();
-void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, long bluemask, long redmask);
-void update(SDL_Renderer *renderer, SDL_Surface *screensurface, long bluemask, long redmask);
+void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board);
+void update(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board);
 int insidesection(SDL_Event event);
 void keyboardevent(SDL_Event event);
 long makemove(long *playermask, long fullmask, int col);
-int choosemove(long ourmask, long opmask, int ourturn);
+int choosemove(long ourmask, long opmask, int depth);
+int getscore(long ourmask, long opmask, int depth, int ourmove);
+long fullmask(struct Board board);
 
-void printboard(long bluemask, long redmask);
+void printboard(struct Board board);
 int takeinput(long * playermask, long fullmask);
 int checkwin(long playermask, long move);
 

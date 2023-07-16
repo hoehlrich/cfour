@@ -14,7 +14,7 @@
  * 40, 41, 42, 43, 44, 45, 46, -]
 */
 
-int checkdir(long playermask, long move, int xshift, int yshift);
+long checkdir(long playermask, long move, int xshift, int yshift);
 long inputfailed(long * playermaskp, long fullmask);
 
 /* takeinput: takes user input and executes move; returns move */
@@ -63,15 +63,15 @@ long makemove(long * playermaskp, long fullmask, int col) {
     return -1;
 }
 
-void printboard(long bluemask, long redmask) {
+void printboard(struct Board board) {
     int i, j;
     long space;
     for (i = NUMROW - 1; i >= 0; i--) {
         for (j = 0; j < NUMCOL; j++) {
             space = pow(2, (BYTE*i) + j);
-            if ((bluemask & space) != 0) {
+            if ((board.aimask & space) != 0) {
                 printf("X ");
-            } else if ((redmask & space) != 0) {
+            } else if ((board.playermask & space) != 0) {
                 printf("O ");
             } else {
                 printf("- ");
@@ -82,21 +82,21 @@ void printboard(long bluemask, long redmask) {
     printf("%s\n", FOOTER);
 }
 
-int checkwin(long playermask, long move) {
-    if (checkdir(playermask, move, -1, 0))
+int checkwin(long mask, long move) {
+    if (checkdir(mask, move, -1, 0))
         return 1;
-    else if (checkdir(playermask, move, -1, 1))
+    else if (checkdir(mask, move, -1, 1))
         return 1;
-    else if (checkdir(playermask, move, 0, 1))
+    else if (checkdir(mask, move, 0, 1))
         return 1;
-    else if (checkdir(playermask, move, 1, 1))
+    else if (checkdir(mask, move, 1, 1))
         return 1;
-    else if (checkdir(playermask, move, 1, 0))
+    else if (checkdir(mask, move, 1, 0))
         return 1;
     return 0;
 }
 
-int checkdir(long playermask, long move, int xshift, int yshift) {
+long checkdir(long mask, long move, int xshift, int yshift) {
     int shift, connected;
     long omove;
     connected = 1;
@@ -108,7 +108,7 @@ int checkdir(long playermask, long move, int xshift, int yshift) {
         } else if (shift < 0) {
             move >>= -shift;
         }
-        if (move & playermask)
+        if (move & mask)
             connected++;
         else
             break;
@@ -121,7 +121,7 @@ int checkdir(long playermask, long move, int xshift, int yshift) {
         } else if (shift < 0) {
             omove >>= -shift;
         }
-        if (omove & playermask)
+        if (omove & mask)
             connected++;
         else
             break;
@@ -131,5 +131,9 @@ int checkdir(long playermask, long move, int xshift, int yshift) {
         return 1;
     else 
         return 0;
+}
+
+long fullmask(struct Board board) {
+    return board.aimask | board.playermask;
 }
 

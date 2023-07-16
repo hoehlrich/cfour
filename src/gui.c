@@ -13,7 +13,7 @@ void logsdlversion();
 void drawcircle(SDL_Renderer *renderer, int x0, int y0, int radius);
 void drawbar(SDL_Renderer *renderer, int n);
 void drawbars(SDL_Renderer *renderer);
-void drawpieces(SDL_Renderer *renderer, long bluemask, long redmask);
+void drawpieces(SDL_Renderer *renderer, struct Board board);
 struct Coord idxtocoord(int xi, int yi);
 
 SDL_Window *window;
@@ -55,22 +55,22 @@ void quit() {
     exit(0);
 }
 
-void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, long bluemask, long redmask) {
+void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board) {
     lastupdate = SDL_GetTicks();
     SDL_RenderClear(renderer);
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, screensurface);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
 
     drawbars(renderer);
-    drawpieces(renderer, bluemask, redmask);
+    drawpieces(renderer, board);
 
     SDL_RenderPresent(renderer);
 }
 
-void update(SDL_Renderer *renderer, SDL_Surface *screensurface, long bluemask, long redmask) {
+void update(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board) {
     int ticks = SDL_GetTicks();
     if (ticks - lastupdate >= 1000 / FPS) {
-        renderboard(renderer, screensurface, bluemask, redmask);
+        renderboard(renderer, screensurface, board);
     }
 }
 
@@ -146,7 +146,7 @@ int insidesection(SDL_Event event) {
     return event.motion.x / SECTIONWIDTH;
 }
 
-void drawpieces(SDL_Renderer *renderer, long bluemask, long redmask) {
+void drawpieces(SDL_Renderer *renderer, struct Board board) {
     int i, j;
     long space;
     struct Coord coord;
@@ -156,10 +156,10 @@ void drawpieces(SDL_Renderer *renderer, long bluemask, long redmask) {
         for (j = 0; j < NUMCOL; j++) {
             space = pow(2, (BYTE*i) + j);
             coord = idxtocoord(j, i);
-            if (bluemask & space) {
+            if (board.aimask & space) {
                 SDL_SetRenderDrawColor(renderer, 32, 62, 160, SDL_ALPHA_OPAQUE);
                 drawcircle(renderer, coord.x, coord.y, radius);
-            } else if (redmask & space) {
+            } else if (board.playermask & space) {
                 SDL_SetRenderDrawColor(renderer, 170, 20, 20, SDL_ALPHA_OPAQUE);
                 drawcircle(renderer, coord.x, coord.y, radius);
             }
