@@ -27,7 +27,7 @@ int main() {
                 quit();
                 break;
             case SDL_KEYDOWN:
-                keyboardevent(event);
+                keyboardevent(event, board);
                 break;
             case SDL_MOUSEMOTION:
                 activesection = insidesection(event);
@@ -66,7 +66,7 @@ int main() {
 long makeaimove(long *aimaskp, long fullmask) {
     long move;
     int col;
-    col = choosemove(*aimaskp, fullmask ^ (*aimaskp), 6);
+    col = choosemove(*aimaskp, fullmask ^ (*aimaskp), DEPTH);
     move = makemove(aimaskp, fullmask, col);
     if (move == -1)
         return -1;

@@ -11,6 +11,7 @@
 #define NUMCOL  7
 #define NUMROW  6
 #define BYTE    8
+#define DEPTH   7
 
 struct Board {
     long playermask;
@@ -22,11 +23,12 @@ void quit();
 void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board);
 void update(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board);
 int insidesection(SDL_Event event);
-void keyboardevent(SDL_Event event);
+void keyboardevent(SDL_Event event, struct Board board);
 long makemove(long *playermask, long fullmask, int col);
 int choosemove(long ourmask, long opmask, int depth);
 int getscore(long ourmask, long opmask, int depth, int ourmove);
 long fullmask(struct Board board);
+int heuristic(struct Board board);
 
 void printboard(struct Board board);
 int takeinput(long * playermask, long fullmask);
