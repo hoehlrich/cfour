@@ -1,32 +1,27 @@
 #include "cfour.h"
 #include <SDL2/SDL_log.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_video.h>
 #include <stdlib.h>
 
 #define FPS 30
-#define FONTPT  16
-#define ASP_WIDTH   7
-#define ASP_HEIGHT  6
-#define SCALE   150
-#define WIDTH   (ASP_WIDTH*SCALE)
-#define HEIGHT  (ASP_HEIGHT*SCALE)
-#define SECTIONWIDTH    (WIDTH / NUMCOL)
-#define SECTIONHEIGHT   HEIGHT
 
 void logsdlversion();
-void drawcircle(SDL_Renderer *renderer, int x0, int y0, int radius);
-void drawbar(SDL_Renderer *renderer, int n);
-void drawbars(SDL_Renderer *renderer);
-void drawtext(SDL_Renderer *renderer, const char* text, int x, int y, int centered);
-void drawpieces(SDL_Renderer *renderer, struct Board board);
-void drawscores(SDL_Renderer *renderer, int * scores);
+
+void renderboard(struct Board board);
+void rendercircle(SDL_Renderer *renderer, int x0, int y0, int radius);
+void renderbar(SDL_Renderer *renderer, int n);
+void renderbars(SDL_Renderer *renderer);
+void renderpieces(SDL_Renderer *renderer, struct Board board);
+
 struct Coord idxtocoord(int xi, int yi);
 
 SDL_Window *window;
 SDL_Renderer *renderer;
 SDL_Surface *screensurface;
-SDL_Surface *text;
-TTF_Font *font;
+SDL_Texture *texture;
+TTF_Font *font16;
+TTF_Font *font86;
 int activesection;
 int lastupdate;
 
@@ -47,13 +42,14 @@ int init() {
     renderer = SDL_CreateRenderer(window, -1, 0);
     screensurface = SDL_GetWindowSurface(window);
 
+    SDL_SetColorKey(screensurface, TRUE, 0);
+
     activesection = -1;
     
     /* font initialization */
     TTF_Init();
-    font = TTF_OpenFont("/usr/share/fonts/liberation/LiberationMono-Regular.ttf", FONTPT);
-    if (font == NULL)
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unable to load font\n");
+    font16 = TTF_OpenFont("/usr/share/fonts/liberation/LiberationMono-Regular.ttf", 16);
+    font86 = TTF_OpenFont("/usr/share/fonts/liberation/LiberationMono-Regular.ttf", 86);
 
     return 0;
 }
@@ -64,41 +60,56 @@ void cleanup() {
     exit(0);
 }
 
-void render(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board, int *scores) {
+void render(struct Board board) {
+    /* clear render */
     lastupdate = SDL_GetTicks();
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, screensurface);
+    SDL_SetRenderTarget(renderer, NULL);
+
+    /* render board directly onto renderer */
+    renderboard(board);
+
+    /* create texture from shared screensurface and copy onto renderer */
+    texture = SDL_CreateTextureFromSurface(renderer, screensurface);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
 
-    drawbars(renderer);
-    drawpieces(renderer, board);
-    drawscores(renderer, scores);
-
+    /* present render */
     SDL_RenderPresent(renderer);
 }
 
-void update(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board, int *scores) {
+void renderboard(struct Board board) {
+    renderbars(renderer);
+    renderpieces(renderer, board);
+}
+
+void update(struct Board board) {
     int ticks = SDL_GetTicks();
     if (ticks - lastupdate >= 1000 / FPS) {
-        render(renderer, screensurface, board, scores);
+        render(board);
     }
 }
 
-void drawscores(SDL_Renderer *renderer, int *scores) {
+void drawscores(int *scores) {
     int i, x, y;
     char text[4];
+    SDL_Rect dstrect = {WIDTH, 50, 0, 0};
+    SDL_Surface *scoressurface;
+
+    scoressurface = SDL_GetWindowSurface(window);
+    SDL_FillRect(scoressurface, NULL, 0);
+    SDL_BlitSurface(scoressurface, NULL, screensurface, &dstrect);
 
     x = SECTIONWIDTH/2;
     y = 0;
     for (i = 0; i < NUMCOL; i++) {
         snprintf(text, 4, "%d", scores[i]);
-        drawtext(renderer, text, x, y, TRUE);
+        drawtext(scoressurface, text, x, y, TRUE, font16);
         x += SECTIONWIDTH;
     }
 }
 
-void drawtext(SDL_Renderer *renderer, const char* text, int x, int y, int centered) {
-    SDL_Texture *texture;
+void drawtext(SDL_Surface *surface, const char* text, int x, int y, int centered, TTF_Font *font) {
     SDL_Surface *textsurface;
     SDL_Rect dstrect;
     int w, h;
@@ -117,12 +128,11 @@ void drawtext(SDL_Renderer *renderer, const char* text, int x, int y, int center
     else
         dstrect.x = x;
 
-    texture = SDL_CreateTextureFromSurface(renderer, textsurface);
-    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+    SDL_BlitSurface(textsurface, NULL, surface, &dstrect);
 }
 
 /* https://en.wikipedia.org/w/index.php?title=Midpoint_circle_algorithm&oldid=889172082#C_example */
-void drawcircle(SDL_Renderer *renderer, int x0, int y0, int radius) {
+void rendercircle(SDL_Renderer *renderer, int x0, int y0, int radius) {
     int x = radius -1;
     int y = 0;
     int dx = 1;
@@ -149,7 +159,7 @@ void drawcircle(SDL_Renderer *renderer, int x0, int y0, int radius) {
     }
 }
 
-void drawbar(SDL_Renderer *renderer, int n) {
+void renderbar(SDL_Renderer *renderer, int n) {
     int radius, x, y0, y1, offset;
 
     radius = SECTIONWIDTH / 2;
@@ -158,22 +168,22 @@ void drawbar(SDL_Renderer *renderer, int n) {
     y1 = SECTIONHEIGHT - radius;
     offset = SECTIONWIDTH / 20;
 
-    drawcircle(renderer, x, y0, radius - offset);
-    drawcircle(renderer, x, y1, radius - offset);
+    rendercircle(renderer, x, y0, radius - offset);
+    rendercircle(renderer, x, y1, radius - offset);
 
     for (x = (SECTIONWIDTH * n) + offset; x < (SECTIONWIDTH - offset) + (SECTIONWIDTH * n); x++) {
         SDL_RenderDrawLine(renderer, x, y0, x, y1);
     }
 }
 
-void drawbars(SDL_Renderer *renderer) {
+void renderbars(SDL_Renderer *renderer) {
     int i;
     for (i = 0; i < NUMCOL; i++) {
         SDL_SetRenderDrawColor(renderer, 2, 2, 2, SDL_ALPHA_OPAQUE);
         if (i == activesection) {
             SDL_SetRenderDrawColor(renderer, 9, 9, 9, SDL_ALPHA_OPAQUE);
         }
-        drawbar(renderer, i);
+        renderbar(renderer, i);
     }
 }
 
@@ -181,11 +191,11 @@ int insidesection(SDL_Event event) {
     return event.motion.x / SECTIONWIDTH;
 }
 
-void drawpieces(SDL_Renderer *renderer, struct Board board) {
+void renderpieces(SDL_Renderer *renderer, struct Board board) {
     int i, j;
     long space;
     struct Coord coord;
-    int radius = (SECTIONWIDTH / 2) * 0.8;
+    int radius = ((SECTIONWIDTH / 2) * 4) / 5;
 
     for (i = 0; i < NUMROW; i++) {
         for (j = 0; j < NUMCOL; j++) {
@@ -193,10 +203,10 @@ void drawpieces(SDL_Renderer *renderer, struct Board board) {
             coord = idxtocoord(j, i);
             if (board.aimask & space) {
                 SDL_SetRenderDrawColor(renderer, 32, 62, 160, SDL_ALPHA_OPAQUE);
-                drawcircle(renderer, coord.x, coord.y, radius);
+                rendercircle(renderer, coord.x, coord.y, radius);
             } else if (board.playermask & space) {
                 SDL_SetRenderDrawColor(renderer, 170, 20, 20, SDL_ALPHA_OPAQUE);
-                drawcircle(renderer, coord.x, coord.y, radius);
+                rendercircle(renderer, coord.x, coord.y, radius);
             }
         }
     }
