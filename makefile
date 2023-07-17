@@ -1,9 +1,12 @@
 objects := $(patsubst src%, target%, $(patsubst %.c,%.o,$(wildcard src/*.c)))
 headers := $(wildcard src/*.h)
+
 CFLAGS = -Wall -Wextra
+LDFLAGS = -L/usr/local/lib -Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags \
+-lSDL2 -lSDL2_image -lSDL2_ttf -lm
 
 cfour : $(objects) $(headers)
-	gcc $(objects) $(headers) -o target/cfour -lSDL2_image $$(sdl2-config --libs) -lm $(CFLAGS)
+	gcc $(objects) $(headers) -o target/cfour  $(LDFLAGS) $(CFLAGS)
 
 target/main.o : src/main.c src/cfour.h
 	gcc -c src/main.c -o target/main.o $(CFLAGS)

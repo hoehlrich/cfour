@@ -7,7 +7,10 @@
 #include <SDL2/SDL_surface.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_events.h>
+#include <SDL2/SDL_ttf.h>
 
+#define TRUE    1
+#define FALSE   0
 #define NUMCOL  7
 #define NUMROW  6
 #define BYTE    8
@@ -19,13 +22,13 @@ struct Board {
 };
 
 int init();
-void quit();
-void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board);
-void update(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board);
+void cleanup();
+void render(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board, int *scores);
+void update(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board, int *scores);
 int insidesection(SDL_Event event);
 void keyboardevent(SDL_Event event, struct Board board);
-long makemove(long *playermask, long fullmask, int col);
-int choosemove(long ourmask, long opmask, int depth);
+long makemove(long *mask, long fullmask, int col);
+int choosemove(struct Board board, int depth, int *scores);
 int getscore(long ourmask, long opmask, int depth, int ourmove);
 long fullmask(struct Board board);
 int heuristic(struct Board board);

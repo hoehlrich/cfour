@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 long makeplayermove(long *playermaskp, long fullmask, int col);
-long makeaimove(long *aimaskp, long fullmask);
+long makeaimove(struct Board *board, int *scores);
 
 int main() {
     init();
@@ -19,12 +19,16 @@ int main() {
 
     int i;
     long move;
-    renderboard(renderer, screensurface, board);
+    int scores[NUMCOL];
+    for (i = 0; i < NUMCOL; i++)
+        scores[i] = 0;
+
+    render(renderer, screensurface, board, scores);
     i = 0;
     while (SDL_WaitEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
-                quit();
+                cleanup();
                 break;
             case SDL_KEYDOWN:
                 keyboardevent(event, board);
@@ -39,35 +43,35 @@ int main() {
                     break;
                 if (checkwin(board.playermask, move)) {
                     printf("You won!\n");
-                    renderboard(renderer, screensurface, board);
+                    render(renderer, screensurface, board, scores);
                     SDL_Delay(3000);
-                    quit();
+                    cleanup();
                 }
-                renderboard(renderer, screensurface, board);
+                render(renderer, screensurface, board, scores);
                 i++;
 
                 /* ais turn */
-                move = makeaimove(&(board.aimask), board.aimask | board.playermask);
+                move = makeaimove(&board, scores);
                 if (move < 0)
                     break;
                 if (checkwin(board.aimask, move)) {
                     printf("You lost!\n");
-                    renderboard(renderer, screensurface, board);
+                    render(renderer, screensurface, board, scores);
                     SDL_Delay(3000);
-                    quit();
+                    cleanup();
                 }
-            i++;
+                i++;
         }
-        update(renderer, screensurface, board);
+        update(renderer, screensurface, board, scores);
     }
 }
 
 /* makeaimove: returns move on success; -1 on failure */
-long makeaimove(long *aimaskp, long fullmask) {
+long makeaimove(struct Board *board, int *scores) {
     long move;
     int col;
-    col = choosemove(*aimaskp, fullmask ^ (*aimaskp), DEPTH);
-    move = makemove(aimaskp, fullmask, col);
+    col = choosemove(*board, DEPTH, scores);
+    move = makemove(&(board->aimask), fullmask(*board), col);
     if (move == -1)
         return -1;
     return move;

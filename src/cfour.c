@@ -28,7 +28,7 @@ int takeinput(long * playermaskp, long fullmask) {
     while (getchar() != '\n');
 
     if (col == -1)
-        quit();
+        cleanup();
     else if (col >= 0 && col <= NUMCOL)
         col--;
     else

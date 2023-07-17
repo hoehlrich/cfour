@@ -1,6 +1,10 @@
 #include "cfour.h"
+#include <SDL2/SDL_log.h>
+#include <SDL2/SDL_ttf.h>
+#include <stdlib.h>
 
 #define FPS 30
+#define FONTPT  16
 #define ASP_WIDTH   7
 #define ASP_HEIGHT  6
 #define SCALE   150
@@ -13,12 +17,16 @@ void logsdlversion();
 void drawcircle(SDL_Renderer *renderer, int x0, int y0, int radius);
 void drawbar(SDL_Renderer *renderer, int n);
 void drawbars(SDL_Renderer *renderer);
+void drawtext(SDL_Renderer *renderer, const char* text, int x, int y, int centered);
 void drawpieces(SDL_Renderer *renderer, struct Board board);
+void drawscores(SDL_Renderer *renderer, int * scores);
 struct Coord idxtocoord(int xi, int yi);
 
 SDL_Window *window;
 SDL_Renderer *renderer;
 SDL_Surface *screensurface;
+SDL_Surface *text;
+TTF_Font *font;
 int activesection;
 int lastupdate;
 
@@ -28,6 +36,7 @@ struct Coord {
 };
 
 int init() {
+    /* window, renderer and surface initialization */
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL could not initialize! SDL Error: %s\n", SDL_GetError());
         return 1;
@@ -35,27 +44,27 @@ int init() {
     logsdlversion();
 
     window = SDL_CreateWindow("Connect Four", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
-    if (window == NULL)
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Window could not be created! SDL Error: %s\n", SDL_GetError());
     renderer = SDL_CreateRenderer(window, -1, 0);
     screensurface = SDL_GetWindowSurface(window);
+
     activesection = -1;
-
-    /* draw background */
-    Uint32 black = SDL_MapRGB(screensurface->format, 0, 0, 0);
-    SDL_FillRect(screensurface, NULL, black);
-
+    
+    /* font initialization */
+    TTF_Init();
+    font = TTF_OpenFont("/usr/share/fonts/liberation/LiberationMono-Regular.ttf", FONTPT);
+    if (font == NULL)
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Unable to load font\n");
 
     return 0;
 }
 
-void quit() {
+void cleanup() {
     SDL_DestroyWindow(window);
     SDL_Quit();
     exit(0);
 }
 
-void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board) {
+void render(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board, int *scores) {
     lastupdate = SDL_GetTicks();
     SDL_RenderClear(renderer);
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, screensurface);
@@ -63,27 +72,53 @@ void renderboard(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Boar
 
     drawbars(renderer);
     drawpieces(renderer, board);
+    drawscores(renderer, scores);
 
     SDL_RenderPresent(renderer);
 }
 
-void update(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board) {
+void update(SDL_Renderer *renderer, SDL_Surface *screensurface, struct Board board, int *scores) {
     int ticks = SDL_GetTicks();
     if (ticks - lastupdate >= 1000 / FPS) {
-        renderboard(renderer, screensurface, board);
+        render(renderer, screensurface, board, scores);
     }
 }
 
+void drawscores(SDL_Renderer *renderer, int *scores) {
+    int i, x, y;
+    char text[4];
 
-void logsdlversion() {
-    SDL_version compiled;
-    SDL_version linked;
-    SDL_VERSION(&compiled);
-    SDL_GetVersion(&linked);
-    SDL_Log("Compiled against SDL version %u.%u.%u\n",
-            compiled.major, compiled.minor, compiled.patch);
-    SDL_Log("Linked against SDL version %u.%u.%u.\n",
-            linked.major, linked.minor, linked.patch);
+    x = SECTIONWIDTH/2;
+    y = 0;
+    for (i = 0; i < NUMCOL; i++) {
+        snprintf(text, 4, "%d", scores[i]);
+        drawtext(renderer, text, x, y, TRUE);
+        x += SECTIONWIDTH;
+    }
+}
+
+void drawtext(SDL_Renderer *renderer, const char* text, int x, int y, int centered) {
+    SDL_Texture *texture;
+    SDL_Surface *textsurface;
+    SDL_Rect dstrect;
+    int w, h;
+
+    SDL_Color white = { 0xFF, 0xFF, 0xFF, 0 };
+
+    textsurface = TTF_RenderUTF8_Solid(font, text, white);
+
+    TTF_SizeUTF8(font, text, &w, &h);
+    dstrect.w = w;
+    dstrect.h = h;
+    dstrect.y = y;
+
+    if (centered)
+        dstrect.x = x - (w / 2);
+    else
+        dstrect.x = x;
+
+    texture = SDL_CreateTextureFromSurface(renderer, textsurface);
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
 }
 
 /* https://en.wikipedia.org/w/index.php?title=Midpoint_circle_algorithm&oldid=889172082#C_example */
@@ -173,3 +208,15 @@ struct Coord idxtocoord(int xi, int yi) {
     coord.y = SECTIONHEIGHT - (SECTIONWIDTH / 2) - (yi * SECTIONWIDTH);
     return coord;
 }
+
+void logsdlversion() {
+    SDL_version compiled;
+    SDL_version linked;
+    SDL_VERSION(&compiled);
+    SDL_GetVersion(&linked);
+    SDL_Log("Compiled against SDL version %u.%u.%u\n",
+            compiled.major, compiled.minor, compiled.patch);
+    SDL_Log("Linked against SDL version %u.%u.%u.\n",
+            linked.major, linked.minor, linked.patch);
+}
+
